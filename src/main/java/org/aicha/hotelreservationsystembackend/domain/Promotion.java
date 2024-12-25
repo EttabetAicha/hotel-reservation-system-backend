@@ -6,6 +6,7 @@ import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -14,8 +15,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class Promotion {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    private Integer hotelId;
+    private UUID id;
     private String description;
     private Double discountPercentage;
     private LocalDateTime startDate;

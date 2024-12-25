@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -13,8 +14,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class Notification {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    private Integer userId;
+    private UUID id;
     private String message;
     @ManyToOne
     private User user;

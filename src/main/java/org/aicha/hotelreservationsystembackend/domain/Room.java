@@ -6,6 +6,7 @@ import org.aicha.hotelreservationsystembackend.domain.enums.RoomType;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -14,7 +15,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class Room {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
     @ManyToOne
     private Hotel hotel;
     private String roomNumber;

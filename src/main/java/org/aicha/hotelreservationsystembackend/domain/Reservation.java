@@ -7,6 +7,7 @@ import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -15,7 +16,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class Reservation {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private UUID id;
     @ManyToOne
     private User client;
     @ManyToOne
