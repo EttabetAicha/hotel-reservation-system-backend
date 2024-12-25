@@ -19,7 +19,7 @@ public class Promotion {
     private String description;
     private Double discountPercentage;
     private LocalDateTime startDate;
-    private LocalDateTimem endDate;
+    private LocalDateTime endDate;
     @ManyToOne
     private Hotel hotel;
 
