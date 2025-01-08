@@ -16,6 +16,7 @@ import java.util.UUID;
 public class Promotion {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
+    private String title;
     private String description;
     private Double discountPercentage;
     private LocalDateTime startDate;

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class Notification {
     private String message;
     @ManyToOne
     private User user;
-
+    private LocalDateTime date;
     public void send() {}
 
     @Override

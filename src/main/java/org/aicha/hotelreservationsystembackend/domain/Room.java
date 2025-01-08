@@ -16,6 +16,7 @@ import java.util.UUID;
 public class Room {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
+    private String name;
     @ManyToOne
     private Hotel hotel;
     private String roomNumber;

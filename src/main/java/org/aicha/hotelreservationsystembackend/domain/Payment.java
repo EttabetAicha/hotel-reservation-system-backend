@@ -1,9 +1,6 @@
 package org.aicha.hotelreservationsystembackend.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
@@ -18,9 +15,12 @@ import java.util.UUID;
 public class Payment {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
-    private Integer reservationId;
+    @ManyToOne
+    private Reservation reservation;
     private Double amount;
     private String paymentMethod;
+    private String paymentStatus;
+
 
     public boolean processPayment() { return false; }
 
