@@ -7,12 +7,13 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface ReservationRepository extends JpaRepository<Reservation, Integer> {
-    List<Reservation> findByUserId(Integer userId);
-    List<Reservation> findByHotelId(Integer hotelId);
+public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
+    List<Reservation> findByUserId(UUID userId);
+    List<Reservation> findByHotelId(UUID hotelId);
     List<Reservation> findByStatus(String status);
     List<Reservation> findByCheckInDateBetween(LocalDateTime startDate, Date endDate);
-    List<Reservation> findByRoomId(Integer roomId);
+    List<Reservation> findByRoomId(UUID roomId);
 }
