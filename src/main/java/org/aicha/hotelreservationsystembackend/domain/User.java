@@ -3,42 +3,72 @@ package org.aicha.hotelreservationsystembackend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.aicha.hotelreservationsystembackend.domain.enums.UserRole;
-import org.hibernate.proxy.HibernateProxy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Objects;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
 @Getter
 @Setter
-@ToString
-@RequiredArgsConstructor
-public class User {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+
+public class User  implements UserDetails {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
     private String name;
+
     private String email;
+
     private String password;
+
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
     private String phone;
+
     private Boolean isActive;
 
     @Override
-    public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
-        User user = (User) o;
-        return getId() != null && Objects.equals(getId(), user.getId());
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + role.name()));
+
+
+        return authorities;
+    }
+    @Override
+    public String getUsername() {
+        return this.email;
+    }
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
     }
 
     @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
     }
 }
+
