@@ -1,4 +1,4 @@
-package org.aicha.hotelreservationsystembackend.config;
+package org.aicha.hotelreservationsystembackend.services;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
