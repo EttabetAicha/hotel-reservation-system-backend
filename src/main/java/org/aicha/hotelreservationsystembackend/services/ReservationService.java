@@ -2,13 +2,13 @@ package org.aicha.hotelreservationsystembackend.services;
 
 import jakarta.validation.Valid;
 import org.aicha.hotelreservationsystembackend.domain.Reservation;
+import org.aicha.hotelreservationsystembackend.domain.enums.ReservationStatus;
 import org.aicha.hotelreservationsystembackend.repository.ReservationRepository;
 import org.aicha.hotelreservationsystembackend.web.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -18,17 +18,17 @@ public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepository;
 
-    public List<Reservation> getReservationsByUserId(UUID userId) {
+    public List<Reservation> getReservationsByClientId(UUID clientId) {
         try {
-            return reservationRepository.findByUserId(userId);
+            return reservationRepository.findByClientId(clientId);
         } catch (Exception e) {
-            throw new RuntimeException("Error retrieving reservations by user ID", e);
+            throw new RuntimeException("Error retrieving reservations by client ID", e);
         }
     }
 
     public List<Reservation> getReservationsByHotelId(UUID hotelId) {
         try {
-            return reservationRepository.findByHotelId(hotelId);
+            return reservationRepository.findByRoomHotelId(hotelId);
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by hotel ID", e);
         }
@@ -36,15 +36,22 @@ public class ReservationService {
 
     public List<Reservation> getReservationsByStatus(String status) {
         try {
-            return reservationRepository.findByStatus(status);
+            return reservationRepository.findByStatus(ReservationStatus.valueOf(status));
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by status", e);
         }
     }
-
-    public List<Reservation> getReservationsByCheckInDateBetween(LocalDateTime startDate, Date endDate) {
+    public List<Reservation> getAllReservations() {
         try {
-            return reservationRepository.findByCheckInDateBetween(startDate, endDate);
+            return reservationRepository.findAll();
+        } catch (Exception e) {
+            throw new RuntimeException("Error retrieving all reservations", e);
+        }
+    }
+
+    public List<Reservation> getReservationsByCheckInDateBetween(LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            return reservationRepository.findByCheckInBetween(startDate, endDate);
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by check-in date range", e);
         }
