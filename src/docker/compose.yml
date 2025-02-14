@@ -1,0 +1,11 @@
+name: hotelreservation
+services:
+  postgres:
+    container_name: hotelreservation_db
+    image: 'postgres:17'
+    environment:
+      - 'POSTGRES_DB=hotelreservation'
+      - 'POSTGRES_PASSWORD=password'
+      - 'POSTGRES_USER=hotelreservation'
+    ports:
+      - '5432:5432'
