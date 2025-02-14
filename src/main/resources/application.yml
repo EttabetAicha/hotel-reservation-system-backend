@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hotelreservation
+    username: hotelreservation
+    password: password
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: public
+  docker:
+    compose:
+      file: src/docker/compose.yml
+      enabled: true
+      lifecycle-management: start_only
