@@ -23,6 +23,7 @@ import java.util.UUID;
 public class User  implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(updatable = false, nullable = false)
     private UUID id;
 
     private String name;
@@ -50,6 +51,11 @@ public class User  implements UserDetails {
     @Override
     public String getUsername() {
         return this.email;
+    }
+
+    @Override
+    public String getPassword() {
+        return this.password;
     }
     @Override
     public boolean isAccountNonExpired() {
