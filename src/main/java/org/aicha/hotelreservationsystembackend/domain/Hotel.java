@@ -1,7 +1,11 @@
 package org.aicha.hotelreservationsystembackend.domain;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import lombok.*;
+import net.minidev.json.annotate.JsonIgnore;
+import org.aicha.hotelreservationsystembackend.config.UserDeserializer;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -25,6 +29,7 @@ public class Hotel {
     @ElementCollection
     private List<String> images;
     @ManyToOne
+    @JsonDeserialize(using = UserDeserializer.class)
     private User owner;
     @OneToMany(mappedBy = "hotel")
     @ToString.Exclude
