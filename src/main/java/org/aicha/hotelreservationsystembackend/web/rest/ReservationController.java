@@ -1,6 +1,7 @@
 package org.aicha.hotelreservationsystembackend.web.rest;
 
 import org.aicha.hotelreservationsystembackend.domain.Reservation;
+import org.aicha.hotelreservationsystembackend.dto.ReservationDTO;
 import org.aicha.hotelreservationsystembackend.services.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +19,8 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @PostMapping
-    public ResponseEntity<Reservation> createReservation(@RequestBody Reservation reservation) {
-        Reservation createdReservation = reservationService.createReservation(reservation);
+    public ResponseEntity<ReservationDTO> createReservation(@RequestBody ReservationDTO reservationDTO) {
+        ReservationDTO createdReservation = reservationService.createReservation(reservationDTO);
         return ResponseEntity.ok(createdReservation);
     }
 

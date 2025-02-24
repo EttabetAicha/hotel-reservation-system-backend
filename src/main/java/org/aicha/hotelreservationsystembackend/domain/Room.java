@@ -1,5 +1,6 @@
 package org.aicha.hotelreservationsystembackend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.aicha.hotelreservationsystembackend.domain.enums.RoomType;
@@ -17,6 +18,7 @@ public class Room {
     private UUID id;
     private String name;
     @ManyToOne
+    @JsonIgnore
     private Hotel hotel;
     private String roomNumber;
     @Enumerated(EnumType.STRING)

@@ -1,8 +1,13 @@
 package org.aicha.hotelreservationsystembackend.services;
 
 import jakarta.validation.Valid;
+import org.aicha.hotelreservationsystembackend.domain.Payment;
 import org.aicha.hotelreservationsystembackend.domain.Reservation;
+import org.aicha.hotelreservationsystembackend.domain.enums.PaymentStatus;
 import org.aicha.hotelreservationsystembackend.domain.enums.ReservationStatus;
+import org.aicha.hotelreservationsystembackend.dto.ReservationDTO;
+import org.aicha.hotelreservationsystembackend.mapper.ReservationMapper;
+import org.aicha.hotelreservationsystembackend.repository.PaymentRepository;
 import org.aicha.hotelreservationsystembackend.repository.ReservationRepository;
 import org.aicha.hotelreservationsystembackend.web.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +22,14 @@ public class ReservationService {
 
     @Autowired
     private ReservationRepository reservationRepository;
+
+    @Autowired
+    private ReservationMapper reservationMapper;
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private PaymentService paymentService; // Assuming you have a PaymentService
 
     public List<Reservation> getReservationsByClientId(UUID clientId) {
         try {
@@ -41,6 +54,7 @@ public class ReservationService {
             throw new RuntimeException("Error retrieving reservations by status", e);
         }
     }
+
     public List<Reservation> getAllReservations() {
         try {
             return reservationRepository.findAll();
@@ -76,11 +90,32 @@ public class ReservationService {
         }
     }
 
-    public Reservation createReservation(@Valid Reservation reservation) {
+    public ReservationDTO createReservation(@Valid ReservationDTO reservationDTO) {
         try {
-            return reservationRepository.save(reservation);
+            if (reservationDTO.getStatus() == null) {
+                reservationDTO.setStatus(ReservationStatus.PENDING);
+            }
+            Reservation reservation = reservationMapper.toEntity(reservationDTO);
+            Reservation savedReservation = reservationRepository.save(reservation);
+            if (reservation.getPayment() != null) {
+                Payment payment = new Payment();
+                payment.setAmount(reservation.getPayment().getAmount());
+                payment.setPaymentMethod(reservation.getPayment().getPaymentMethod());
+                payment.setPaymentStatus(PaymentStatus.PENDING);
+                Payment savedPayment = paymentRepository.save(payment);
+                savedReservation.setPayment(savedPayment);
+                savedPayment.setReservation(savedReservation);
+                reservationRepository.save(savedReservation);
+            }
+            if (savedReservation.getPayment() != null) {
+                paymentService.processPayment(savedReservation.getPayment());
+            }
+
+            return reservationMapper.toDTO(savedReservation);
         } catch (Exception e) {
-            throw new RuntimeException("Error creating reservation", e);
+            System.err.println("Detailed error creating reservation: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error creating reservation: " + e.getMessage(), e);
         }
     }
 

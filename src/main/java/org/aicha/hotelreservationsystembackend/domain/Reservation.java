@@ -2,6 +2,7 @@ package org.aicha.hotelreservationsystembackend.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import net.minidev.json.annotate.JsonIgnore;
 import org.aicha.hotelreservationsystembackend.domain.enums.ReservationStatus;
 
 import java.time.LocalDateTime;
@@ -25,11 +26,13 @@ public class Reservation {
     private LocalDateTime checkIn;
     private LocalDateTime checkOut;
     @Enumerated(EnumType.STRING)
-    private ReservationStatus status;
+    @Column(nullable = false)
+    private ReservationStatus status = ReservationStatus.PENDING;
     private Double totalPrice;
     private LocalDateTime createdAt;
-    @ManyToOne
+    @JsonIgnore
+    @OneToOne(cascade = CascadeType.PERSIST)
+    @JoinColumn(name = "payment_id", referencedColumnName = "id")
     private Payment payment;
-
 
 }
