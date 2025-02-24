@@ -1,7 +1,7 @@
 package org.aicha.hotelreservationsystembackend.web.rest;
 
 import org.aicha.hotelreservationsystembackend.domain.User;
-import org.aicha.hotelreservationsystembackend.dto.LoginRequest;
+import org.aicha.hotelreservationsystembackend.dto.LoginDTO;
 import org.aicha.hotelreservationsystembackend.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@RequestBody LoginRequest request) {
+    public ResponseEntity<String> loginUser(@RequestBody LoginDTO request) {
         String token = userService.loginUser(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(token);
     }
