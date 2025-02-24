@@ -15,3 +15,6 @@ spring:
       file: src/docker/compose.yml
       enabled: true
       lifecycle-management: start_only
+stripe:
+  api:
+    key: sk_test_51OgSUzCvwqwJehZs1ykmgRGJuhcNGh3SZ60JA5LIbO2053kyQsGxFAk308ADHEKeznRi4irGbgfhZY1vQr5TkOcS00FpGEut61
