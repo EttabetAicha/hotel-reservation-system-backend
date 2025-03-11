@@ -51,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             String userEmail = jwtService.extractEmail(jwt);
+
             System.out.println("Extracted Email: " + userEmail);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {

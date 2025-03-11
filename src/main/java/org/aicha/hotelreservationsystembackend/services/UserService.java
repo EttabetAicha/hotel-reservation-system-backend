@@ -47,7 +47,7 @@ public class UserService {
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found for this email :: " + email));
-            return jwtService.generateToken(userDetails, user.getRole().name(), user.getId());
+            return jwtService.generateToken(userDetails, user.getRole().name(), user.getId(),user.getName());
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {

@@ -40,10 +40,12 @@ public class JwtService {
                 .compact();
 
     }
-    public String generateToken(UserDetails userDetails, String role, UUID userId) {
+    public String generateToken(UserDetails userDetails, String role, UUID userId,String username) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("role", role);
+        extraClaims.put("username",username);
         extraClaims.put("userId", userId.toString());
+
         return generateToken(extraClaims, userDetails);
     }
     public <T> T extractClaim(String token, Function<Claims , T> claimsResolver) {
