@@ -1,6 +1,10 @@
 package org.aicha.hotelreservationsystembackend.services;
 
+import org.aicha.hotelreservationsystembackend.domain.Hotel;
 import org.aicha.hotelreservationsystembackend.domain.Room;
+import org.aicha.hotelreservationsystembackend.dto.RoomDTO;
+import org.aicha.hotelreservationsystembackend.mapper.RoomMapper;
+
 import org.aicha.hotelreservationsystembackend.repository.RoomRepository;
 import org.aicha.hotelreservationsystembackend.web.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomService {
@@ -15,61 +20,43 @@ public class RoomService {
     @Autowired
     private RoomRepository roomRepository;
 
-    public List<Room> getAllRooms() {
-        try {
-            return roomRepository.findAll();
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving all rooms", e);
-        }
+    @Autowired
+    private RoomMapper roomMapper;
+
+    public RoomDTO createRoom(RoomDTO roomDTO, Hotel hotel) {
+        Room room = roomMapper.toRoom(roomDTO);
+        room.setHotel(hotel);
+        Room savedRoom = roomRepository.save(room);
+        return roomMapper.toRoomDTO(savedRoom);
     }
 
-    public Room getRoomById(UUID id) {
-        try {
-            return roomRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Room not found for this id :: " + id));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving room by ID", e);
-        }
+    public RoomDTO getRoomById(UUID id) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found for this id :: " + id));
+        return roomMapper.toRoomDTO(room);
     }
 
-    public Room createRoom(Room room) {
-        try {
-            return roomRepository.save(room);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating room", e);
-        }
+    public List<RoomDTO> getAllRooms() {
+        return roomRepository.findAll().stream()
+                .map(roomMapper::toRoomDTO)
+                .collect(Collectors.toList());
     }
 
-    public Room updateRoom(UUID id, Room roomDetails) {
-        try {
-            Room room = roomRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Room not found for this id :: " + id));
-
-            room.setName(roomDetails.getName());
-            room.setType(roomDetails.getType());
-            room.setPrice(roomDetails.getPrice());
-            room.setHotel(roomDetails.getHotel());
-
-            return roomRepository.save(room);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating room", e);
-        }
+    public RoomDTO updateRoom(UUID id, RoomDTO roomDTO) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found for this id :: " + id));
+        roomMapper.updateRoomFromDTO(roomDTO, room);
+        Room updatedRoom = roomRepository.save(room);
+        return roomMapper.toRoomDTO(updatedRoom);
+    }
+    public List<RoomDTO> getRoomDataByHotelId(UUID hotelId) {
+        List<Room> rooms = roomRepository.findByHotelId(hotelId);
+        return rooms.stream()
+                .map(roomMapper::toRoomDTO)
+                .collect(Collectors.toList());
     }
 
     public void deleteRoom(UUID id) {
-        try {
-            Room room = roomRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Room not found for this id :: " + id));
-
-            roomRepository.delete(room);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting room", e);
-        }
+        roomRepository.deleteById(id);
     }
 }

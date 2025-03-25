@@ -5,17 +5,21 @@ import org.aicha.hotelreservationsystembackend.domain.Payment;
 import org.aicha.hotelreservationsystembackend.domain.Reservation;
 import org.aicha.hotelreservationsystembackend.domain.enums.PaymentStatus;
 import org.aicha.hotelreservationsystembackend.domain.enums.ReservationStatus;
+import org.aicha.hotelreservationsystembackend.dto.PaymentDTO;
 import org.aicha.hotelreservationsystembackend.dto.ReservationDTO;
+import org.aicha.hotelreservationsystembackend.mapper.PaymentMapper;
 import org.aicha.hotelreservationsystembackend.mapper.ReservationMapper;
 import org.aicha.hotelreservationsystembackend.repository.PaymentRepository;
 import org.aicha.hotelreservationsystembackend.repository.ReservationRepository;
 import org.aicha.hotelreservationsystembackend.web.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -25,120 +29,157 @@ public class ReservationService {
 
     @Autowired
     private ReservationMapper reservationMapper;
+
     @Autowired
     private PaymentRepository paymentRepository;
 
     @Autowired
-    private PaymentService paymentService; // Assuming you have a PaymentService
+    private PaymentService paymentService;
+    @Autowired
+    private  PaymentMapper paymentMapper;
 
-    public List<Reservation> getReservationsByClientId(UUID clientId) {
+    public List<ReservationDTO> getReservationsByClientId(UUID clientId) {
         try {
-            return reservationRepository.findByClientId(clientId);
+            List<Reservation> reservations = reservationRepository.findByClientId(clientId);
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by client ID", e);
         }
     }
 
-    public List<Reservation> getReservationsByHotelId(UUID hotelId) {
+    public List<ReservationDTO> getReservationsByHotelId(UUID hotelId) {
         try {
-            return reservationRepository.findByRoomHotelId(hotelId);
+            List<Reservation> reservations = reservationRepository.findByRoomHotelId(hotelId);
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by hotel ID", e);
         }
     }
 
-    public List<Reservation> getReservationsByStatus(String status) {
+    public List<ReservationDTO> getReservationsByStatus(String status) {
         try {
-            return reservationRepository.findByStatus(ReservationStatus.valueOf(status));
+            List<Reservation> reservations = reservationRepository.findByStatus(ReservationStatus.valueOf(status));
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by status", e);
         }
     }
 
-    public List<Reservation> getAllReservations() {
+    public List<ReservationDTO> getAllReservations() {
         try {
-            return reservationRepository.findAll();
+            List<Reservation> reservations = reservationRepository.findAll();
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving all reservations", e);
         }
     }
 
-    public List<Reservation> getReservationsByCheckInDateBetween(LocalDateTime startDate, LocalDateTime endDate) {
+    public List<ReservationDTO> getReservationsByCheckInDateBetween(LocalDateTime startDate, LocalDateTime endDate) {
         try {
-            return reservationRepository.findByCheckInBetween(startDate, endDate);
+            List<Reservation> reservations = reservationRepository.findByCheckInBetween(startDate, endDate);
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by check-in date range", e);
         }
     }
 
-    public List<Reservation> getReservationsByRoomId(UUID roomId) {
+    public List<ReservationDTO> getReservationsByRoomId(UUID roomId) {
         try {
-            return reservationRepository.findByRoomId(roomId);
+            List<Reservation> reservations = reservationRepository.findByRoomId(roomId);
+            return reservations.stream()
+                    .map(reservationMapper::toDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservations by room ID", e);
         }
     }
 
-    public Reservation getReservationById(UUID id) {
+    public ReservationDTO getReservationById(UUID id) {
         try {
-            return reservationRepository.findById(id)
+            Reservation reservation = reservationRepository.findById(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for this id :: " + id));
+            return reservationMapper.toDTO(reservation);
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Error retrieving reservation by ID", e);
         }
     }
+    @Transactional
+    public ReservationDTO createReservationWithPayment(ReservationDTO reservationWithPaymentDTO) {
+        // Validate input data
+        validateReservationInput(reservationWithPaymentDTO);
 
-    public ReservationDTO createReservation(@Valid ReservationDTO reservationDTO) {
         try {
-            if (reservationDTO.getStatus() == null) {
-                reservationDTO.setStatus(ReservationStatus.PENDING);
-            }
-            Reservation reservation = reservationMapper.toEntity(reservationDTO);
-            Reservation savedReservation = reservationRepository.save(reservation);
-            if (reservation.getPayment() != null) {
-                Payment payment = new Payment();
-                payment.setAmount(reservation.getPayment().getAmount());
-                payment.setPaymentMethod(reservation.getPayment().getPaymentMethod());
-                payment.setPaymentStatus(PaymentStatus.PENDING);
-                Payment savedPayment = paymentRepository.save(payment);
-                savedReservation.setPayment(savedPayment);
-                savedPayment.setReservation(savedReservation);
-                reservationRepository.save(savedReservation);
-            }
-            if (savedReservation.getPayment() != null) {
-                paymentService.processPayment(savedReservation.getPayment());
+            // Create payment first
+            PaymentDTO paymentDTO = reservationWithPaymentDTO.getPayment();
+            if (paymentDTO == null) {
+                throw new IllegalArgumentException("Payment details must be provided");
             }
 
+            // Set payment status to PENDING
+            paymentDTO.setPaymentStatus(PaymentStatus.PENDING);
+
+            // Convert payment DTO to entity
+            Payment paymentEntity = paymentMapper.toEntity(paymentDTO);
+
+            // Convert and prepare reservation
+            Reservation reservation = reservationMapper.toEntity(reservationWithPaymentDTO);
+
+            // Set reservation status
+            reservation.setStatus(ReservationStatus.PENDING);
+
+            // Establish bidirectional relationship
+            reservation.setPayment(paymentEntity);
+            paymentEntity.setReservation(reservation);
+
+            // Save payment first to ensure it's not detached
+            Payment savedPayment = paymentRepository.save(paymentEntity);
+
+            // Now save reservation (which should cascade the payment)
+            reservation.setPayment(savedPayment);
+            Reservation savedReservation = reservationRepository.save(reservation);
+
+            // Return the saved reservation as DTO
             return reservationMapper.toDTO(savedReservation);
+
         } catch (Exception e) {
-            System.err.println("Detailed error creating reservation: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error creating reservation: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to create reservation with payment", e);
         }
     }
 
-    public Reservation updateReservation(UUID id, @Valid Reservation reservationDetails) {
-        try {
-            Reservation reservation = reservationRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for this id :: " + id));
-
-            reservation.setCheckIn(reservationDetails.getCheckIn());
-            reservation.setCheckOut(reservationDetails.getCheckOut());
-            reservation.setStatus(reservationDetails.getStatus());
-            reservation.setRoom(reservationDetails.getRoom());
-            reservation.setClient(reservationDetails.getClient());
-            reservation.setTotalPrice(reservationDetails.getTotalPrice());
-            reservation.setCreatedAt(reservationDetails.getCreatedAt());
-            reservation.setPayment(reservationDetails.getPayment());
-
-            return reservationRepository.save(reservation);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating reservation", e);
+    private void validateReservationInput(ReservationDTO reservationDTO) {
+        if (reservationDTO.getRoomId() == null) {
+            throw new IllegalArgumentException("Room ID must not be null");
         }
+        if (reservationDTO.getClientId() == null) {
+            throw new IllegalArgumentException("Client ID must not be null");
+        }
+        if (reservationDTO.getCheckIn() == null || reservationDTO.getCheckOut() == null) {
+            throw new IllegalArgumentException("Check-in and Check-out dates must not be null");
+        }
+        if (reservationDTO.getCheckIn().isAfter(reservationDTO.getCheckOut())) {
+            throw new IllegalArgumentException("Check-in date must be before Check-out date");
+        }
+    }
+
+
+    public ReservationDTO updateReservation(UUID id, @Valid ReservationDTO reservationDTO) {
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for this id :: " + id));
+        reservationMapper.updateReservationFromDTO(reservationDTO, reservation);
+        Reservation updatedReservation = reservationRepository.save(reservation);
+        return reservationMapper.toDTO(updatedReservation);
     }
 
     public void deleteReservation(UUID id) {
@@ -153,4 +194,19 @@ public class ReservationService {
             throw new RuntimeException("Error deleting reservation", e);
         }
     }
+
+    public String getRoomNameById(UUID id) {
+        return reservationRepository.findRoomNameById(id);
+    }
+
+    public String getHotelNameByRoomId(UUID id) {
+        return reservationRepository.findHotelNameByRoomId(id);
+    }
+
+    public String getHotelImagesByRoomId(UUID id) {
+        return reservationRepository.findRoomImagesByRoomId(id);
+    }
+
+
+
 }

@@ -1,9 +1,9 @@
 package org.aicha.hotelreservationsystembackend.dto;
 
-import jakarta.persistence.Column;
 import lombok.*;
 import org.aicha.hotelreservationsystembackend.domain.enums.PaymentStatus;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -13,8 +13,17 @@ import java.util.UUID;
 public class PaymentDTO {
     private UUID id;
     private UUID reservationId;
-    private Double amount;
+    private double amount;
     private String paymentMethod;
-    private PaymentStatus paymentStatus;
     private String stripePaymentIntentId;
+    private PaymentStatus paymentStatus;
+    private String payerName;
+    private String payerEmail;
+    private String billingAddress;
+    private String billingCity;
+    private String billingState;
+    private String billingZip;
+    private String billingCountry;
+    private LocalDateTime paymentDate;
+    private LocalDateTime lastUpdated;
 }

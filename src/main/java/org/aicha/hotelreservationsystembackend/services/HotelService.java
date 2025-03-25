@@ -1,7 +1,12 @@
 package org.aicha.hotelreservationsystembackend.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.aicha.hotelreservationsystembackend.domain.Hotel;
+import org.aicha.hotelreservationsystembackend.domain.User;
+import org.aicha.hotelreservationsystembackend.dto.HotelDTO;
+import org.aicha.hotelreservationsystembackend.mapper.HotelMapper;
 import org.aicha.hotelreservationsystembackend.repository.HotelRepository;
+import org.aicha.hotelreservationsystembackend.repository.UserRepository;
 import org.aicha.hotelreservationsystembackend.web.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,6 +19,10 @@ public class HotelService {
 
     @Autowired
     private HotelRepository hotelRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private HotelMapper hotelMapper;
 
     public List<Hotel> getAllHotels() {
         try {
@@ -24,51 +33,41 @@ public class HotelService {
     }
 
     public Hotel getHotelById(UUID id) {
-        try {
-            return hotelRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error retrieving hotel by ID", e);
-        }
+        return hotelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
     }
 
-    public Hotel createHotel(Hotel hotel) {
-        try {
-            return hotelRepository.save(hotel);
-        } catch (Exception e) {
-            throw new RuntimeException("Error creating hotel", e);
+    public Hotel createHotel(HotelDTO hotelDTO) {
+        if (hotelDTO.getOwnerId() != null) {
+            userRepository.findById(hotelDTO.getOwnerId())
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
         }
+        Hotel hotel = hotelMapper.hotelDTOToHotel(hotelDTO);
+        return hotelRepository.save(hotel);
     }
 
     public Hotel updateHotel(UUID id, Hotel hotelDetails) {
-        try {
-            Hotel hotel = hotelRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
 
-            hotel.setName(hotelDetails.getName());
-            hotel.setAddress(hotelDetails.getAddress());
-            hotel.setRating(hotelDetails.getRating());
+        hotel.setName(hotelDetails.getName());
+        hotel.setDescription(hotelDetails.getDescription());
+        hotel.setAddress(hotelDetails.getAddress());
+        hotel.setCity(hotelDetails.getCity());
+        hotel.setCountry(hotelDetails.getCountry());
+        hotel.setRating(hotelDetails.getRating());
+        hotel.setStars(hotelDetails.getStars());
+        hotel.setStatus(hotelDetails.getStatus());
+        hotel.setAmenities(hotelDetails.getAmenities());
+        hotel.setImages(hotelDetails.getImages());
 
-            return hotelRepository.save(hotel);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error updating hotel", e);
-        }
+        return hotelRepository.save(hotel);
     }
 
     public void deleteHotel(UUID id) {
-        try {
-            Hotel hotel = hotelRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found for this id :: " + id));
 
-            hotelRepository.delete(hotel);
-        } catch (ResourceNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting hotel", e);
-        }
+        hotelRepository.delete(hotel);
     }
 }

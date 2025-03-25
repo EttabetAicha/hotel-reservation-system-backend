@@ -8,7 +8,6 @@ import org.aicha.hotelreservationsystembackend.domain.Payment;
 import org.aicha.hotelreservationsystembackend.domain.Reservation;
 import org.aicha.hotelreservationsystembackend.domain.enums.PaymentStatus;
 import org.aicha.hotelreservationsystembackend.dto.PaymentDTO;
-
 import org.aicha.hotelreservationsystembackend.mapper.PaymentMapper;
 import org.aicha.hotelreservationsystembackend.repository.PaymentRepository;
 import org.aicha.hotelreservationsystembackend.repository.ReservationRepository;
@@ -44,7 +43,6 @@ public class PaymentService {
         Stripe.apiKey = this.stripeApiKey;
     }
 
-
     public List<PaymentDTO> getAllPayments() {
         return paymentRepository.findAll().stream()
                 .map(paymentMapper::toDTO)
@@ -58,34 +56,11 @@ public class PaymentService {
     }
 
     public PaymentDTO createPayment(PaymentDTO paymentDTO) {
-        Reservation reservation = reservationRepository.findById(paymentDTO.getReservationId())
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for ID: " + paymentDTO.getReservationId()));
-
-        try {
-
-            PaymentIntent paymentIntent = createStripePaymentIntent(paymentDTO.getAmount());
-            Payment payment = paymentMapper.toEntity(paymentDTO);
-            payment.setPaymentStatus(PaymentStatus.PENDING);
-            payment.setStripePaymentIntentId(paymentIntent.getId());
-
-            return paymentMapper.toDTO(paymentRepository.save(payment));
-        } catch (StripeException e) {
-            throw new RuntimeException("Failed to create Stripe payment intent", e);
-        }
+        Payment payment = paymentMapper.toEntity(paymentDTO);
+        Payment savedPayment = paymentRepository.save(payment);
+        return paymentMapper.toDTO(savedPayment);
     }
-    private PaymentIntent createStripePaymentIntent(Double amount) throws StripeException {
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount((long) (amount * 100))
-                .setCurrency("usd")
-                .setAutomaticPaymentMethods(
-                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                .setEnabled(true)
-                                .build()
-                )
-                .build();
 
-        return PaymentIntent.create(params);
-    }
     public PaymentDTO confirmPayment(String paymentIntentId) {
         try {
             Stripe.apiKey = stripeApiKey;
@@ -98,11 +73,20 @@ public class PaymentService {
                 payment.setPaymentStatus(PaymentStatus.COMPLETED);
             } else if ("canceled".equals(paymentIntent.getStatus())) {
                 payment.setPaymentStatus(PaymentStatus.FAILED);
+            } else {
+                payment.setPaymentStatus(PaymentStatus.PENDING);
             }
 
             return paymentMapper.toDTO(paymentRepository.save(payment));
+        } catch (ResourceNotFoundException e) {
+            System.err.println("Error confirming payment: " + e.getMessage());
+            throw new RuntimeException("Payment not found for payment intent: " + paymentIntentId, e);
         } catch (StripeException e) {
-            throw new RuntimeException("Failed to confirm payment", e);
+            System.err.println("Stripe error confirming payment: " + e.getMessage());
+            throw new RuntimeException("Failed to confirm payment with Stripe", e);
+        } catch (Exception e) {
+            System.err.println("Unexpected error confirming payment: " + e.getMessage());
+            throw new RuntimeException("Unexpected error occurred while confirming payment", e);
         }
     }
 
@@ -126,9 +110,7 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found for ID: " + id));
 
-        payment.setAmount(paymentDTO.getAmount());
-        payment.setPaymentMethod(paymentDTO.getPaymentMethod());
-        payment.setPaymentStatus(paymentDTO.getPaymentStatus());
+        paymentMapper.updatePaymentFromDTO(paymentDTO, payment);
 
         return paymentMapper.toDTO(paymentRepository.save(payment));
     }
@@ -139,16 +121,19 @@ public class PaymentService {
 
         paymentRepository.delete(payment);
     }
+
     public List<PaymentDTO> getPaymentsByReservationId(UUID reservationId) {
         return paymentRepository.findByReservationId(reservationId).stream()
                 .map(paymentMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
     public List<PaymentDTO> getPaymentsByStatus(String status) {
         return paymentRepository.findByPaymentStatus(PaymentStatus.valueOf(status)).stream()
                 .map(paymentMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
     public void processPayment(Payment payment) {
         try {
             boolean isSuccessful = Math.random() > 0.2;
@@ -167,5 +152,25 @@ public class PaymentService {
         }
     }
 
+    public String createStripePaymentIntent(Double amount) {
+        try {
+            Stripe.apiKey = stripeApiKey;
 
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount((long) (amount * 100)) // amount in cents
+                    .setCurrency("usd")
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .build()
+                    )
+                    .build();
+
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
+            return paymentIntent.getClientSecret();
+        } catch (StripeException e) {
+            System.err.println("Stripe error creating payment intent: " + e.getMessage());
+            throw new RuntimeException("Failed to create payment intent with Stripe", e);
+        }
+    }
 }

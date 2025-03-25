@@ -44,7 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/hotels/**").permitAll()
-                        .requestMatchers("/api/reservations/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reservations/**").permitAll()
                         .requestMatchers("/api/promotions/**").permitAll()
                         .requestMatchers("/api/rooms/**").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()

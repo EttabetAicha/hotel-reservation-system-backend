@@ -7,6 +7,7 @@ import org.aicha.hotelreservationsystembackend.domain.enums.ReservationStatus;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+
 @Data
 public class ReservationDTO {
 
@@ -15,9 +16,9 @@ public class ReservationDTO {
     private LocalDateTime checkOut;
     private UUID clientId;
     private UUID roomId;
-    private UUID paymentId;
+    private PaymentDTO payment;
     private double totalPrice;
+
     @NotNull
     private ReservationStatus status;
-
 }

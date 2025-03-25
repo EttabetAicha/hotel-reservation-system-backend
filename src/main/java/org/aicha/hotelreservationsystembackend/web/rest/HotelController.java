@@ -1,7 +1,9 @@
 package org.aicha.hotelreservationsystembackend.web.rest;
 
 import org.aicha.hotelreservationsystembackend.domain.Hotel;
+import org.aicha.hotelreservationsystembackend.dto.HotelDTO;
 import org.aicha.hotelreservationsystembackend.services.HotelService;
+import org.aicha.hotelreservationsystembackend.mapper.HotelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,31 +15,36 @@ import java.util.UUID;
 @RequestMapping("/api/hotels")
 public class HotelController {
 
-    @Autowired
-    private HotelService hotelService;
+    private final HotelService hotelService;
+    private final HotelMapper hotelMapper;
+
+    public HotelController(HotelService hotelService, HotelMapper hotelMapper) {
+        this.hotelService = hotelService;
+        this.hotelMapper = hotelMapper;
+    }
 
     @PostMapping
-    public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel) {
-        Hotel createdHotel = hotelService.createHotel(hotel);
-        return ResponseEntity.ok(createdHotel);
+    public ResponseEntity<HotelDTO> createHotel(@RequestBody HotelDTO hotelDTO) {
+        Hotel createdHotel = hotelService.createHotel(hotelDTO);
+        return ResponseEntity.ok(hotelMapper.hotelToHotelDTO(createdHotel));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Hotel> getHotelById(@PathVariable UUID id) {
+    public ResponseEntity<HotelDTO> getHotelById(@PathVariable UUID id) {
         Hotel hotel = hotelService.getHotelById(id);
-        return ResponseEntity.ok(hotel);
+        return ResponseEntity.ok(hotelMapper.hotelToHotelDTO(hotel));
     }
 
     @GetMapping
-    public ResponseEntity<List<Hotel>> getAllHotels() {
+    public ResponseEntity<List<HotelDTO>> getAllHotels() {
         List<Hotel> hotels = hotelService.getAllHotels();
-        return ResponseEntity.ok(hotels);
+        return ResponseEntity.ok(hotels.stream().map(hotelMapper::hotelToHotelDTO).toList());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Hotel> updateHotel(@PathVariable UUID id, @RequestBody Hotel hotelDetails) {
-        Hotel updatedHotel = hotelService.updateHotel(id, hotelDetails);
-        return ResponseEntity.ok(updatedHotel);
+    public ResponseEntity<HotelDTO> updateHotel(@PathVariable UUID id, @RequestBody HotelDTO hotelDTO) {
+        Hotel updatedHotel = hotelService.updateHotel(id, hotelMapper.hotelDTOToHotel(hotelDTO));
+        return ResponseEntity.ok(hotelMapper.hotelToHotelDTO(updatedHotel));
     }
 
     @DeleteMapping("/{id}")

@@ -7,12 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/payments")
-@CrossOrigin(origins = "*")
 public class PaymentController {
 
     @Autowired
@@ -49,11 +50,19 @@ public class PaymentController {
         return ResponseEntity.noContent().build();
     }
 
-
     @PostMapping("/confirm/{paymentIntentId}")
-    public ResponseEntity<PaymentDTO> confirmPayment(@PathVariable String paymentIntentId) {
-        PaymentDTO confirmedPayment = paymentService.confirmPayment(paymentIntentId);
-        return ResponseEntity.ok(confirmedPayment);
+    public ResponseEntity<?> confirmPayment(@PathVariable String paymentIntentId) {
+        if (!paymentIntentId.matches("pi_[a-zA-Z0-9]+_secret_[a-zA-Z0-9]+")) {
+            return ResponseEntity.badRequest().body("Invalid payment intent ID format.");
+        }
+        try {
+            PaymentDTO confirmedPayment = paymentService.confirmPayment(paymentIntentId);
+            return ResponseEntity.ok(confirmedPayment);
+        } catch (Exception e) {
+            System.err.println("Error confirming payment: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error confirming payment: " + e.getMessage());
+        }
     }
 
     @PostMapping("/cancel/{paymentIntentId}")
@@ -61,7 +70,21 @@ public class PaymentController {
         PaymentDTO cancelledPayment = paymentService.cancelPayment(paymentIntentId);
         return ResponseEntity.ok(cancelledPayment);
     }
-
+    @PostMapping("/create-payment-intent")
+    public ResponseEntity<Map<String, String>> createPaymentIntent(@RequestParam Double amount) {
+        try {
+            String paymentIntentId = paymentService.createStripePaymentIntent(amount);
+            Map<String, String> response = new HashMap<>();
+            response.put("paymentIntentId", paymentIntentId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error creating payment intent: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Error creating payment intent: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
     @GetMapping("/reservation/{reservationId}")
     public ResponseEntity<List<PaymentDTO>> getPaymentsByReservationId(@PathVariable UUID reservationId) {
         List<PaymentDTO> payments = paymentService.getPaymentsByReservationId(reservationId);
