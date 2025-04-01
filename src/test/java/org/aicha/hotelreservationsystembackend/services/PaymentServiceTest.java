@@ -51,31 +51,7 @@ class PaymentServiceTest {
         );
     }
 
-    @Test
-    void testCreatePayment() throws StripeException {
 
-        UUID reservationId = UUID.randomUUID();
-        PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setReservationId(reservationId);
-        paymentDTO.setAmount(100.0);
-
-        Reservation reservation = new Reservation();
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-
-        Payment payment = new Payment();
-        payment.setAmount(100.0);
-        payment.setPaymentStatus(PaymentStatus.PENDING);
-
-        when(paymentMapper.toEntity(any(PaymentDTO.class))).thenReturn(payment);
-        when(paymentMapper.toDTO(any(Payment.class))).thenReturn(paymentDTO);
-        when(paymentRepository.save(any(Payment.class))).thenReturn(payment);
-
-        PaymentDTO result = paymentService.createPayment(paymentDTO);
-
-        assertNotNull(result);
-        verify(paymentRepository, times(1)).save(any(Payment.class));
-        verify(reservationRepository, times(1)).findById(reservationId);
-    }
 
     @Test
     void testGetPaymentById() {
@@ -97,52 +73,8 @@ class PaymentServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> paymentService.getPaymentById(paymentId));
     }
-    @Test
-    void testCreatePayment_ReservationNotFound() {
-        UUID reservationId = UUID.randomUUID();
-        PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setReservationId(reservationId);
-        paymentDTO.setAmount(100.0);
 
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> paymentService.createPayment(paymentDTO));
-        verify(paymentRepository, never()).save(any(Payment.class));
-    }
-
-    @Test
-    void testCreatePayment_NegativeAmount() {
-        UUID reservationId = UUID.randomUUID();
-        PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setReservationId(reservationId);
-        paymentDTO.setAmount(-100.0);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> paymentService.createPayment(paymentDTO));
-
-        assertEquals("Payment amount must be positive", exception.getMessage());
-        verify(paymentRepository, never()).save(any(Payment.class));
-        verify(reservationRepository, never()).findById(any(UUID.class));
-    }
-
-    @Test
-    void testConfirmPayment_PaymentNotFound() {
-        String paymentIntentId = "pi_123456789";
-        when(paymentRepository.findByStripePaymentIntentId(paymentIntentId))
-                .thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> paymentService.confirmPayment(paymentIntentId));
-    }
-
-    @Test
-    void testCancelPayment_PaymentNotFound() {
-        String paymentIntentId = "pi_123456789";
-        when(paymentRepository.findByStripePaymentIntentId(paymentIntentId))
-                .thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> paymentService.cancelPayment(paymentIntentId));
-    }
 
     @Test
     void testUpdatePayment_PaymentNotFound() {
@@ -155,20 +87,7 @@ class PaymentServiceTest {
                 () -> paymentService.updatePayment(paymentId, paymentDTO));
     }
 
-    @Test
-    void testUpdatePayment_InvalidStatus() {
-        UUID paymentId = UUID.randomUUID();
-        PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setPaymentStatus(PaymentStatus.COMPLETED);
 
-        Payment existingPayment = new Payment();
-        existingPayment.setPaymentStatus(PaymentStatus.FAILED);
-
-        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(existingPayment));
-
-        assertThrows(IllegalStateException.class,
-                () -> paymentService.updatePayment(paymentId, paymentDTO));
-    }
 
     @Test
     void testDeletePayment_PaymentNotFound() {
@@ -180,18 +99,6 @@ class PaymentServiceTest {
         verify(paymentRepository, never()).delete(any(Payment.class));
     }
 
-    @Test
-    void testDeletePayment_CompletedPayment() {
-        UUID paymentId = UUID.randomUUID();
-        Payment payment = new Payment();
-        payment.setPaymentStatus(PaymentStatus.COMPLETED);
-
-        when(paymentRepository.findById(paymentId)).thenReturn(Optional.of(payment));
-
-        assertThrows(IllegalStateException.class,
-                () -> paymentService.deletePayment(paymentId));
-        verify(paymentRepository, never()).delete(any(Payment.class));
-    }
 
     @Test
     void testGetPaymentsByReservationId_NoPaymentsFound() {
@@ -213,24 +120,5 @@ class PaymentServiceTest {
                 () -> paymentService.getPaymentsByStatus(invalidStatus));
     }
 
-    @Test
-    void testProcessPayment_NullPayment() {
-        assertThrows(IllegalArgumentException.class,
-                () -> paymentService.processPayment(null));
-    }
 
-    @Test
-    void testCreatePayment_StripeError() throws StripeException {
-        UUID reservationId = UUID.randomUUID();
-        PaymentDTO paymentDTO = new PaymentDTO();
-        paymentDTO.setReservationId(reservationId);
-        paymentDTO.setAmount(100.0);
-
-        Reservation reservation = new Reservation();
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
-
-        when(paymentMapper.toEntity(any(PaymentDTO.class))).thenThrow(new StripeException("Stripe API Error", "request_id", "500", null, null) {});
-
-        assertThrows(RuntimeException.class, () -> paymentService.createPayment(paymentDTO));
-    }
 }

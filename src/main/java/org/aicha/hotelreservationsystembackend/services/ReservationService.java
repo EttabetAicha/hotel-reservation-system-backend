@@ -115,42 +115,38 @@ public class ReservationService {
             throw new RuntimeException("Error retrieving reservation by ID", e);
         }
     }
+    private void validateNoOverlappingReservations(UUID roomId, LocalDateTime checkIn, LocalDateTime checkOut) {
+        List<Reservation> overlappingReservations = reservationRepository.findOverlappingReservations(roomId, checkIn, checkOut);
+        if (!overlappingReservations.isEmpty()) {
+            throw new IllegalArgumentException("The room is already booked for the selected dates.");
+        }
+    }
     @Transactional
     public ReservationDTO createReservationWithPayment(ReservationDTO reservationWithPaymentDTO) {
-        // Validate input data
         validateReservationInput(reservationWithPaymentDTO);
-
+        validateNoOverlappingReservations(reservationWithPaymentDTO.getRoomId(), reservationWithPaymentDTO.getCheckIn(), reservationWithPaymentDTO.getCheckOut());
         try {
-            // Create payment first
             PaymentDTO paymentDTO = reservationWithPaymentDTO.getPayment();
             if (paymentDTO == null) {
                 throw new IllegalArgumentException("Payment details must be provided");
             }
 
-            // Set payment status to PENDING
             paymentDTO.setPaymentStatus(PaymentStatus.PENDING);
 
-            // Convert payment DTO to entity
             Payment paymentEntity = paymentMapper.toEntity(paymentDTO);
 
-            // Convert and prepare reservation
             Reservation reservation = reservationMapper.toEntity(reservationWithPaymentDTO);
 
-            // Set reservation status
             reservation.setStatus(ReservationStatus.PENDING);
 
-            // Establish bidirectional relationship
             reservation.setPayment(paymentEntity);
             paymentEntity.setReservation(reservation);
 
-            // Save payment first to ensure it's not detached
             Payment savedPayment = paymentRepository.save(paymentEntity);
 
-            // Now save reservation (which should cascade the payment)
             reservation.setPayment(savedPayment);
             Reservation savedReservation = reservationRepository.save(reservation);
 
-            // Return the saved reservation as DTO
             return reservationMapper.toDTO(savedReservation);
 
         } catch (Exception e) {

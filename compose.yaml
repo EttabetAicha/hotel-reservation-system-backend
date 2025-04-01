@@ -1,0 +1,37 @@
+version: '3.8'
+
+name: hotelreservation
+services:
+  app:
+    container_name: hotelreservation_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '9090:8445'
+    depends_on:
+      - postgres
+    networks:
+      - hotelreservation
+
+  postgres:
+    container_name: hotelreservation_db
+    image: 'postgres:17'
+    environment:
+      - 'POSTGRES_DB=hotelreservation'
+      - 'POSTGRES_PASSWORD=password'
+      - 'POSTGRES_USER=hotelreservation'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hotelreservation
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  hotelreservation:
+    driver: bridge
